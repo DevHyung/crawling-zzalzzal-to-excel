@@ -8,9 +8,10 @@ python_version  :3.6
 required module :requests
 develope env    : Mac OS X High Sierra, intel i5 (2Ghz), using cpu
 [ref]
-1. 
+1.
 
 """
+asdasdasd
 import requests
 from bs4 import BeautifulSoup
 
