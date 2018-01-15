@@ -99,13 +99,18 @@ def saveExcel(datalist,fontlist):
         ws1.column_dimensions[column].width = adjusted_width
     wb.save('gogo.xlsx')
 if __name__=="__main__":
-    ### config var
+    ### config var#######################
     initExcel() # if first
     #exit(-1)# if first
     coinlist = []
     coinidx = 0
     target_5m = [2,3,4,5,6,11,12,13]
-    ###
+
+    taget_15m = [2,3,4,5,7,11,14,15]
+    oldget_15m = [4,6,7]
+    oldtarget_15m = [7,14,15]
+
+    #####################################
     now = time.localtime()
     d = "%04d-%02d-%02d " % (now.tm_year, now.tm_mon, now.tm_mday,)
     t = '%02d:%02d:%02d' % (now.tm_hour, now.tm_min, now.tm_sec)
@@ -121,20 +126,8 @@ if __name__=="__main__":
     """
         날짜	시간	코인	현재가 단기시그널 매매강도 5~60거래량급증률 30분상승률 1시간상승률 5~60(거개량 거래대금)
         0    1   2   3     4       5    6,7,8,9         10      11       12,13 ~ 14,15 ~16,17,~18,19
-         try:
-            coinname = tdlist[0].get_text().strip()
-            coinidx = coinlist.index(coinname)
-        except:
-            coinlist.append(coinname)
-            coinidx = coinlist.index(coinname)
-            datalist.append( ['' for _ in range(20)])
-            fontlist.append( ['' for _ in range(20)])
-            datalist[coinidx][0] = d
-            datalist[coinidx][1] = t
-            fontlist[coinidx][0] = Font(color=colors.WHITE)
-            fontlist[coinidx][1] = Font(color=colors.WHITE)
     """
-    for tr in five_minute.find_all('tr')[1:3]:
+    for tr in five_minute.find_all('tr')[1:]:
         tdlist =tr.find_all('td')[:-1]
         coinlist.append(tdlist[0].get_text().strip())
         datalist.append(['' for _ in range(20)])
@@ -153,6 +146,47 @@ if __name__=="__main__":
                     fontlist[coinidx][target_5m[idx]] = Font(color=str(tdlist[idx].find('span')['style']).split('#')[1][:-1])
                 except:
                     fontlist[coinidx][target_5m[idx]] = Font(color=colors.WHITE)
+
+    for tr in fifteen_minute.find_all('tr')[1:]:
+        tdlist = tr.find_all('td')[:-1]
+        try:
+            coinname = tdlist[0].get_text().strip()
+            coinidx = coinlist.index(coinname) # 이거지나면 있는경우
+            for idx in range(len(oldget_15m)):
+                datalist[coinidx][oldtarget_15m[idx]] = tdlist[oldget_15m[idx]].get_text().strip()
+
+                try:
+                    fontlist[coinidx][oldtarget_15m[idx]] = Font(
+                        color=str(tdlist[idx].find('i')['style']).split('#')[1][:-1])
+                except:
+                    try:
+                        fontlist[coinidx][oldtarget_15m[idx]] = Font(
+                            color=str(tdlist[idx].find('span')['style']).split('#')[1][:-1])
+                    except:
+                        fontlist[coinidx][oldtarget_15m[idx]] = Font(color=colors.WHITE)
+
+        except:#없는경우
+            print("없음",coinname)
+            coinlist.append(coinname)
+            coinidx = coinlist.index(coinname)
+
+            datalist.append(['' for _ in range(20)])
+            fontlist.append(['' for _ in range(20)])
+            datalist[coinidx][0] = d
+            datalist[coinidx][1] = t
+            fontlist[coinidx][0] = Font(color=colors.WHITE)
+            fontlist[coinidx][1] = Font(color=colors.WHITE)
+            for idx in range(len(tdlist)):
+                datalist[coinidx][taget_15m[idx]] = tdlist[idx].get_text().strip()
+                try:
+                    fontlist[coinidx][taget_15m[idx]] = Font(
+                        color=str(tdlist[idx].find('i')['style']).split('#')[1][:-1])
+                except:
+                    try:
+                        fontlist[coinidx][taget_15m[idx]] = Font(
+                            color=str(tdlist[idx].find('span')['style']).split('#')[1][:-1])
+                    except:
+                        fontlist[coinidx][taget_15m[idx]] = Font(color=colors.WHITE)
     saveExcel(datalist, fontlist)
     #print(datalist,len(datalist))
     #print(fontlist, len(fontlist))
