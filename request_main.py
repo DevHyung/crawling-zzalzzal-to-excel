@@ -18,12 +18,15 @@ from openpyxl import load_workbook
 from openpyxl.styles import PatternFill,Alignment, Font,Border,Side
 from openpyxl.styles import colors
 import time
+import os
 ###
 font =Font(color=colors.WHITE)
 fill = PatternFill("solid", bgColor=colors.BLACK)
 ali = Alignment(horizontal='center',vertical='center',shrinkToFit=True)
 thin = Side(border_style="thin", color="ffffff")
 border = Border(top=thin, left=thin, right=thin, bottom=thin)
+cycleidx = 1
+fileidx = 1
 ###
 def numToWon(num):
     try:
@@ -58,7 +61,7 @@ def style_range(ws, cell_range, border=Border(), fill=None, font=None, alignment
                 c.font = font
                 c.alignment=alignment
                 c.border = border
-def initExcel():
+def initExcel(gogofile):
     # Create an new Excel file and add a worksheet.
     """
     날짜	시간	코인	현재가 단기시그널 매매강도 5~60거래량급증률 30분상승률 1시간상승률 5~60(거개량 거래대금) 
@@ -77,13 +80,13 @@ def initExcel():
     ws1.append(header2)
     ws1.append(header3)
     style_range(ws1, 'A1:T3', border=border, fill=fill, font=font, alignment=ali)
-    wb.save("gogo.xlsx")
-def saveExcel(datalist,fontlist):
+    wb.save(str(fileidx)+'_'+gogofile)
+def saveExcel(datalist,fontlist,gogofile):
     """
     날짜	시간	코인	현재가 단기시그널 매매강도 5~60거래량급증률 30분상승률 1시간상승률 5~60(거개량 거래대금)
     """
     won = [13, 15, 17, 19]
-    wb = load_workbook('gogo.xlsx')
+    wb = load_workbook(str(fileidx)+'_'+gogofile)
     ws1 = wb.worksheets[0]
     startrow = ws1.max_row+1
     for rowidx in range(len(datalist)):
@@ -111,186 +114,194 @@ def saveExcel(datalist,fontlist):
                 pass
         adjusted_width = (max_length + 2) * 1.2
         ws1.column_dimensions[column].width = adjusted_width
-    wb.save('gogo.xlsx')
+    wb.save(str(fileidx)+'_'+gogofile)
 if __name__=="__main__":
-    ### config var#######################
-    initExcel() # if first
-    #exit(-1)# if first
-    coinlist = []
-    coinidx = 0
-    target_5m = [2,3,4,5,6,11,12,13]
+    print("_______________________________________________")
+    print("*** Made By Pakr HyungJune copyright @ DevHyung")
+    f = open("option.txt", 'r')
+    option = f.readlines()
+    gogocycle = float(option[2].strip())
+    print("*** [OPTION] :" + str(int(gogocycle)) + "초 주기")
+    gogofile = option[6].strip()
+    gogosize = int(option[10].strip())
+    print("*** [OPTION] :" + str(gogosize) + "K면 새로운 파일")
+    print("_______________________________________________")
+    initExcel(gogofile)  # if first
 
-
-    taget_15m = [2,3,4,5,7,11,14,15] #원래저장되야하는거
-    oldget_15m = [4,6,7] # 있으면 이것만 뽑아오고
-    oldtarget_15m = [7,14,15] #여기에다가 넣으면됌
-
-    taget_30m = [2, 3, 4, 5, 8,10, 16, 17]  # 원래저장되야하는거
-    oldget_30m = [4,5,6,7]  # 있으면 이것만 뽑아오고
-    oldtarget_30m = [8,10,16,17]  # 여기에다가 넣으면됌
-
-    taget_60m = [2, 3, 4, 5, 9, 11, 18, 19]  # 원래저장되야하는거
-    oldget_60m = [4, 6, 7]  # 있으면 이것만 뽑아오고
-    oldtarget_60m = [9,18,19]  # 여기에다가 넣으면됌
-
-    #####################################
-    now = time.localtime()
-    d = "%04d-%02d-%02d " % (now.tm_year, now.tm_mon, now.tm_mday,)
-    t = '%02d:%02d:%02d' % (now.tm_hour, now.tm_min, now.tm_sec)
-    html = requests.get('http://www.zzalzzal.com/gogo/upbit')
-    bs4 = BeautifulSoup(html.text,'lxml')
-    div = bs4.find('div',class_='tab-content')
-    five_minute = div.find('div',id='5m').find('table',id='go1')
-    fifteen_minute = div.find('div',id='15m').find('table',id='go3')
-    thirty_minute = div.find('div', id='30m').find('table', id='go4')
-    sixty_minute = div.find('div', id='60m').find('table', id='go5')
-    datalist = []
-    fontlist = []
-    """
-        날짜	시간	코인	현재가 단기시그널 매매강도 5~60거래량급증률 30분상승률 1시간상승률 5~60(거개량 거래대금)
-        0    1   2   3     4       5    6,7,8,9         10      11       12,13 ~ 14,15 ~16,17,~18,19
-    """
-    for tr in five_minute.find_all('tr')[1:]:
-        tdlist =tr.find_all('td')[:-1]
-        coinlist.append(tdlist[0].get_text().strip())
-        datalist.append(['' for _ in range(20)])
-        fontlist.append(['' for _ in range(20)])
-        coinidx = coinlist.index(tdlist[0].get_text().strip())
-        datalist[coinidx][0] = d
-        datalist[coinidx][1] = t
-        fontlist[coinidx][0] = Font(color=colors.WHITE)
-        fontlist[coinidx][1] = Font(color=colors.WHITE)
-        for idx in range(len(tdlist)):
-            datalist[coinidx][target_5m[idx]] = tdlist[idx].get_text().strip()
-            try:
-                fontlist[coinidx][target_5m[idx]] = Font(color=str(tdlist[idx].find('i')['style']).split('#')[1][:-1])
-            except:
-                try:
-                    if 'cyan' in str(tdlist[idx].find('span')['style']):
-                        fontlist[coinidx][target_5m[idx]] = Font(color='00ffff')
-                    elif 'orange' in str(tdlist[idx].find('span')['style']):
-                        fontlist[coinidx][target_5m[idx]] = Font(color='ffa500')
-                    else:
-                        fontlist[coinidx][target_5m[idx]] = Font(color=str(tdlist[idx].find('span')['style']).split('#')[1][:-1])
-
-                except:
-                    fontlist[coinidx][target_5m[idx]] = Font(color=colors.WHITE)
-    for tr in fifteen_minute.find_all('tr')[1:]:
-        tdlist = tr.find_all('td')[:-1]
-        """
+    while True:
+        now = time.localtime()
+        d = "%04d-%02d-%02d " % (now.tm_year, now.tm_mon, now.tm_mday,)
+        t = '%02d:%02d:%02d' % (now.tm_hour, now.tm_min, now.tm_sec)
+        print(">>> " + str(cycleidx) + "번째 parsing start :",t)
+        coinlist = []
+        coinidx = 0
+        target_5m = [2,3,4,5,6,11,12,13]
         taget_15m = [2,3,4,5,7,11,14,15] #원래저장되야하는거
         oldget_15m = [4,6,7] # 있으면 이것만 뽑아오고
         oldtarget_15m = [7,14,15] #여기에다가 넣으면됌
-        """
-        try:
-            coinname = tdlist[0].get_text().strip()
-            coinidx = coinlist.index(coinname) # 이거지나면 있는경우
-            for idx in range(len(oldget_15m)):
-                datalist[coinidx][oldtarget_15m[idx]] = tdlist[oldget_15m[idx]].get_text().strip()
+        taget_30m = [2, 3, 4, 5, 8,10, 16, 17]  # 원래저장되야하는거
+        oldget_30m = [4,5,6,7]  # 있으면 이것만 뽑아오고
+        oldtarget_30m = [8,10,16,17]  # 여기에다가 넣으면됌
+        taget_60m = [2, 3, 4, 5, 9, 11, 18, 19]  # 원래저장되야하는거
+        oldget_60m = [4, 6, 7]  # 있으면 이것만 뽑아오고
+        oldtarget_60m = [9,18,19]  # 여기에다가 넣으면됌
+        #####################################
+        html = requests.get('http://www.zzalzzal.com/gogo/upbit')
+        bs4 = BeautifulSoup(html.text,'lxml')
+        div = bs4.find('div',class_='tab-content')
+        five_minute = div.find('div',id='5m').find('table',id='go1')
+        fifteen_minute = div.find('div',id='15m').find('table',id='go3')
+        thirty_minute = div.find('div', id='30m').find('table', id='go4')
+        sixty_minute = div.find('div', id='60m').find('table', id='go5')
+        datalist = []
+        fontlist = []
+        for tr in five_minute.find_all('tr')[1:]:
+            tdlist =tr.find_all('td')[:-1]
+            coinlist.append(tdlist[0].get_text().strip())
+            datalist.append(['' for _ in range(20)])
+            fontlist.append(['' for _ in range(20)])
+            coinidx = coinlist.index(tdlist[0].get_text().strip())
+            datalist[coinidx][0] = d
+            datalist[coinidx][1] = t
+            fontlist[coinidx][0] = Font(color=colors.WHITE)
+            fontlist[coinidx][1] = Font(color=colors.WHITE)
+            for idx in range(len(tdlist)):
+                datalist[coinidx][target_5m[idx]] = tdlist[idx].get_text().strip()
                 try:
-                    fontlist[coinidx][oldtarget_15m[idx]] = Font(color=str(tdlist[oldget_15m[idx]].find('i')['style']).split('#')[1][:-1])
+                    fontlist[coinidx][target_5m[idx]] = Font(color=str(tdlist[idx].find('i')['style']).split('#')[1][:-1])
                 except:
                     try:
-                        fontlist[coinidx][oldtarget_15m[idx]] = Font(color=str(tdlist[oldget_15m[idx]].find('span')['style']).split('#')[1][:-1])
+                        if 'cyan' in str(tdlist[idx].find('span')['style']):
+                            fontlist[coinidx][target_5m[idx]] = Font(color='00ffff')
+                        elif 'orange' in str(tdlist[idx].find('span')['style']):
+                            fontlist[coinidx][target_5m[idx]] = Font(color='ffa500')
+                        else:
+                            fontlist[coinidx][target_5m[idx]] = Font(color=str(tdlist[idx].find('span')['style']).split('#')[1][:-1])
+
                     except:
-                        fontlist[coinidx][oldtarget_15m[idx]] = Font(color=colors.WHITE)
-        except:#없는경우
-            print("없음",coinname)
-            coinlist.append(coinname)
-            coinidx = coinlist.index(coinname)
+                        fontlist[coinidx][target_5m[idx]] = Font(color=colors.WHITE)
+        for tr in fifteen_minute.find_all('tr')[1:]:
+            tdlist = tr.find_all('td')[:-1]
             """
-             taget_15m = [2,3,4,5,7,11,14,15] #원래저장되야하는거
+            taget_15m = [2,3,4,5,7,11,14,15] #원래저장되야하는거
             oldget_15m = [4,6,7] # 있으면 이것만 뽑아오고
             oldtarget_15m = [7,14,15] #여기에다가 넣으면됌
             """
-            datalist.append(['' for _ in range(20)])
-            fontlist.append(['' for _ in range(20)])
-            datalist[coinidx][0] = d
-            datalist[coinidx][1] = t
-            fontlist[coinidx][0] = Font(color=colors.WHITE)
-            fontlist[coinidx][1] = Font(color=colors.WHITE)
-            for idx in range(len(taget_15m)):
-                datalist[coinidx][taget_15m[idx]] = tdlist[idx].get_text().strip()
-                try:
-                    fontlist[coinidx][taget_15m[idx]] = Font(color=str(tdlist[idx].find('i')['style']).split('#')[1][:-1])
-                except:
+            try:
+                coinname = tdlist[0].get_text().strip()
+                coinidx = coinlist.index(coinname) # 이거지나면 있는경우
+                for idx in range(len(oldget_15m)):
+                    datalist[coinidx][oldtarget_15m[idx]] = tdlist[oldget_15m[idx]].get_text().strip()
                     try:
-                        fontlist[coinidx][taget_15m[idx]] = Font(color=str(tdlist[idx].find('span')['style']).split('#')[1][:-1])
+                        fontlist[coinidx][oldtarget_15m[idx]] = Font(color=str(tdlist[oldget_15m[idx]].find('i')['style']).split('#')[1][:-1])
                     except:
-                        fontlist[coinidx][taget_15m[idx]] = Font(color=colors.WHITE)
-    for tr in thirty_minute.find_all('tr')[1:]:
-        tdlist = tr.find_all('td')[:-1]
-        try:
-            coinname = tdlist[0].get_text().strip()
-            coinidx = coinlist.index(coinname) # 이거지나면 있는경우
-            for idx in range(len(oldget_30m)):
-                datalist[coinidx][oldtarget_30m[idx]] = tdlist[oldget_30m[idx]].get_text().strip()
-                try:
-                    fontlist[coinidx][oldtarget_30m[idx]] = Font(color=str(tdlist[oldget_30m[idx]].find('i')['style']).split('#')[1][:-1])
-                except:
+                        try:
+                            fontlist[coinidx][oldtarget_15m[idx]] = Font(color=str(tdlist[oldget_15m[idx]].find('span')['style']).split('#')[1][:-1])
+                        except:
+                            fontlist[coinidx][oldtarget_15m[idx]] = Font(color=colors.WHITE)
+            except:#없는경우
+                coinlist.append(coinname)
+                coinidx = coinlist.index(coinname)
+                """
+                 taget_15m = [2,3,4,5,7,11,14,15] #원래저장되야하는거
+                oldget_15m = [4,6,7] # 있으면 이것만 뽑아오고
+                oldtarget_15m = [7,14,15] #여기에다가 넣으면됌
+                """
+                datalist.append(['' for _ in range(20)])
+                fontlist.append(['' for _ in range(20)])
+                datalist[coinidx][0] = d
+                datalist[coinidx][1] = t
+                fontlist[coinidx][0] = Font(color=colors.WHITE)
+                fontlist[coinidx][1] = Font(color=colors.WHITE)
+                for idx in range(len(taget_15m)):
+                    datalist[coinidx][taget_15m[idx]] = tdlist[idx].get_text().strip()
                     try:
-                        fontlist[coinidx][oldtarget_30m[idx]] = Font(color=str(tdlist[oldget_30m[idx]].find('span')['style']).split('#')[1][:-1])
+                        fontlist[coinidx][taget_15m[idx]] = Font(color=str(tdlist[idx].find('i')['style']).split('#')[1][:-1])
                     except:
-                        fontlist[coinidx][oldtarget_30m[idx]] = Font(color=colors.WHITE)
-        except:#없는경우
-            """
-            taget_30m = [2, 3, 4, 5, 8,10, 16, 17]  # 원래저장되야하는거
-            oldget_30m = [4,5,6,7]  # 있으면 이것만 뽑아오고
-            oldtarget_30m = [8,10,16,17]  # 여기에다가 넣으면됌
-            """
-            print("없음2",coinname)
-            coinlist.append(coinname)
-            coinidx = coinlist.index(coinname)
-            datalist.append(['' for _ in range(20)])
-            fontlist.append(['' for _ in range(20)])
-            datalist[coinidx][0] = d
-            datalist[coinidx][1] = t
-            fontlist[coinidx][0] = Font(color=colors.WHITE)
-            fontlist[coinidx][1] = Font(color=colors.WHITE)
-            for idx in range(len(tdlist)):
-                datalist[coinidx][taget_30m[idx]] = tdlist[idx].get_text().strip()
-                try:
-                    fontlist[coinidx][taget_30m[idx]] = Font(color=str(tdlist[idx].find('i')['style']).split('#')[1][:-1])
-                except:
+                        try:
+                            fontlist[coinidx][taget_15m[idx]] = Font(color=str(tdlist[idx].find('span')['style']).split('#')[1][:-1])
+                        except:
+                            fontlist[coinidx][taget_15m[idx]] = Font(color=colors.WHITE)
+        for tr in thirty_minute.find_all('tr')[1:]:
+            tdlist = tr.find_all('td')[:-1]
+            try:
+                coinname = tdlist[0].get_text().strip()
+                coinidx = coinlist.index(coinname) # 이거지나면 있는경우
+                for idx in range(len(oldget_30m)):
+                    datalist[coinidx][oldtarget_30m[idx]] = tdlist[oldget_30m[idx]].get_text().strip()
                     try:
-                        fontlist[coinidx][taget_30m[idx]] = Font(color=str(tdlist[idx].find('span')['style']).split('#')[1][:-1])
+                        fontlist[coinidx][oldtarget_30m[idx]] = Font(color=str(tdlist[oldget_30m[idx]].find('i')['style']).split('#')[1][:-1])
                     except:
-                        fontlist[coinidx][taget_30m[idx]] = Font(color=colors.WHITE)
+                        try:
+                            fontlist[coinidx][oldtarget_30m[idx]] = Font(color=str(tdlist[oldget_30m[idx]].find('span')['style']).split('#')[1][:-1])
+                        except:
+                            fontlist[coinidx][oldtarget_30m[idx]] = Font(color=colors.WHITE)
+            except:#없는경우
+                """
+                taget_30m = [2, 3, 4, 5, 8,10, 16, 17]  # 원래저장되야하는거
+                oldget_30m = [4,5,6,7]  # 있으면 이것만 뽑아오고
+                oldtarget_30m = [8,10,16,17]  # 여기에다가 넣으면됌
+                """
+                coinlist.append(coinname)
+                coinidx = coinlist.index(coinname)
+                datalist.append(['' for _ in range(20)])
+                fontlist.append(['' for _ in range(20)])
+                datalist[coinidx][0] = d
+                datalist[coinidx][1] = t
+                fontlist[coinidx][0] = Font(color=colors.WHITE)
+                fontlist[coinidx][1] = Font(color=colors.WHITE)
+                for idx in range(len(tdlist)):
+                    datalist[coinidx][taget_30m[idx]] = tdlist[idx].get_text().strip()
+                    try:
+                        fontlist[coinidx][taget_30m[idx]] = Font(color=str(tdlist[idx].find('i')['style']).split('#')[1][:-1])
+                    except:
+                        try:
+                            fontlist[coinidx][taget_30m[idx]] = Font(color=str(tdlist[idx].find('span')['style']).split('#')[1][:-1])
+                        except:
+                            fontlist[coinidx][taget_30m[idx]] = Font(color=colors.WHITE)
+        for tr in sixty_minute.find_all('tr')[1:]:
+            tdlist = tr.find_all('td')[:-1]
+            try:
+                coinname = tdlist[0].get_text().strip()
+                coinidx = coinlist.index(coinname) # 이거지나면 있는경우
+                for idx in range(len(oldget_60m)):
+                    datalist[coinidx][oldtarget_60m[idx]] = tdlist[oldget_60m[idx]].get_text().strip()
+                    try:
+                        fontlist[coinidx][oldtarget_60m[idx]] = Font(color=str(tdlist[oldget_60m[idx]].find('i')['style']).split('#')[1][:-1])
+                    except:
+                        try:
+                            fontlist[coinidx][oldtarget_60m[idx]] = Font(color=str(tdlist[oldget_60m[idx]].find('span')['style']).split('#')[1][:-1])
+                        except:
+                            fontlist[coinidx][oldtarget_60m[idx]] = Font(color=colors.WHITE)
+            except:#없는경우
+                coinlist.append(coinname)
+                coinidx = coinlist.index(coinname)
 
-    for tr in sixty_minute.find_all('tr')[1:]:
-        tdlist = tr.find_all('td')[:-1]
-        try:
-            coinname = tdlist[0].get_text().strip()
-            coinidx = coinlist.index(coinname) # 이거지나면 있는경우
-            for idx in range(len(oldget_60m)):
-                datalist[coinidx][oldtarget_60m[idx]] = tdlist[oldget_60m[idx]].get_text().strip()
-                try:
-                    fontlist[coinidx][oldtarget_60m[idx]] = Font(color=str(tdlist[oldget_60m[idx]].find('i')['style']).split('#')[1][:-1])
-                except:
+                datalist.append(['' for _ in range(20)])
+                fontlist.append(['' for _ in range(20)])
+                datalist[coinidx][0] = d
+                datalist[coinidx][1] = t
+                fontlist[coinidx][0] = Font(color=colors.WHITE)
+                fontlist[coinidx][1] = Font(color=colors.WHITE)
+                for idx in range(len(tdlist)):
+                    datalist[coinidx][taget_60m[idx]] = tdlist[idx].get_text().strip()
                     try:
-                        fontlist[coinidx][oldtarget_60m[idx]] = Font(color=str(tdlist[oldget_60m[idx]].find('span')['style']).split('#')[1][:-1])
+                        fontlist[coinidx][taget_60m[idx]] = Font(color=str(tdlist[idx].find('i')['style']).split('#')[1][:-1])
                     except:
-                        fontlist[coinidx][oldtarget_60m[idx]] = Font(color=colors.WHITE)
-        except:#없는경우
-            print("없음3",coinname)
-            coinlist.append(coinname)
-            coinidx = coinlist.index(coinname)
+                        try:
+                            fontlist[coinidx][taget_60m[idx]] = Font(color=str(tdlist[idx].find('span')['style']).split('#')[1][:-1])
+                        except:
+                            fontlist[coinidx][taget_60m[idx]] = Font(color=colors.WHITE)
+        saveExcel(datalist, fontlist,gogofile)
+        mystat = os.stat(str(fileidx) + '_' + gogofile)
+        mysize = int(mystat.st_size / 1024)
+        print("\t>>> 현재 파일 size :", mysize)
+        if mysize > gogosize:
+            print("\t>>> 파일 size 초과로 새로운 파일 생성")
+            fileidx += 1
+            initExcel(gogofile)
 
-            datalist.append(['' for _ in range(20)])
-            fontlist.append(['' for _ in range(20)])
-            datalist[coinidx][0] = d
-            datalist[coinidx][1] = t
-            fontlist[coinidx][0] = Font(color=colors.WHITE)
-            fontlist[coinidx][1] = Font(color=colors.WHITE)
-            for idx in range(len(tdlist)):
-                datalist[coinidx][taget_60m[idx]] = tdlist[idx].get_text().strip()
-                try:
-                    fontlist[coinidx][taget_60m[idx]] = Font(color=str(tdlist[idx].find('i')['style']).split('#')[1][:-1])
-                except:
-                    try:
-                        fontlist[coinidx][taget_60m[idx]] = Font(color=str(tdlist[idx].find('span')['style']).split('#')[1][:-1])
-                    except:
-                        fontlist[coinidx][taget_60m[idx]] = Font(color=colors.WHITE)
-    saveExcel(datalist, fontlist)
-    #print(datalist,len(datalist))
-    #print(fontlist, len(fontlist))
+        print(">>> " + str(cycleidx) + "번째 parsing end :", int(gogocycle),'초 이후 다시시작')
+        cycleidx += 1
+        time.sleep(gogocycle)
+
