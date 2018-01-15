@@ -13,35 +13,102 @@ develope env    : Mac OS X High Sierra, intel i5 (2Ghz), using cpu
 """
 import requests
 from bs4 import BeautifulSoup
-import xlsxwriter
-def makeExcel():
+from openpyxl import Workbook
+from openpyxl import load_workbook
+from openpyxl.styles import PatternFill,Alignment, Font,Border,Side
+from openpyxl.styles import colors
+import time
+
+###
+font =Font(color=colors.WHITE)
+fill = PatternFill("solid", bgColor=colors.BLACK)
+ali = Alignment(horizontal='center',vertical='center',shrinkToFit=True)
+thin = Side(border_style="thin", color="ffffff")
+border = Border(top=thin, left=thin, right=thin, bottom=thin)
+###
+def style_range(ws, cell_range, border=Border(), fill=None, font=None, alignment=None):
+    top = Border(top=border.top)
+    left = Border(left=border.left)
+    right = Border(right=border.right)
+    bottom = Border(bottom=border.bottom)
+    rows = ws[cell_range]
+
+    for cell in rows[0]:
+        cell.border = cell.border + top
+    for cell in rows[-1]:
+        cell.border = cell.border + bottom
+    for row in rows:
+        l = row[0]
+        r = row[-1]
+        l.border = l.border + left
+        r.border = r.border + right
+        if fill:
+            for c in row:
+                c.fill = fill
+                c.font = font
+                c.alignment=alignment
+                c.border = border
+def initExcel():
     # Create an new Excel file and add a worksheet.
-    global workbook
-    workbook = xlsxwriter.Workbook('demo.xlsx')
-    worksheet = workbook.add_worksheet()
+    """
+    날짜	시간	코인	현재가 단기시그널 매매강도 5~60거래량급증률 30분상승률 1시간상승률 5~60(거개량 거래대금) 
+    """
+    # >>> Write
+    header1 = ['', '', '', '', '단기', '매매', '5분', '15분', '30분', '60분', '30분', '1시간', '5분', '5분', '15분', '15분', '30분',
+               '30분', '1시간', '1시간']
+    header2 = ['', '', '', '', '시그널', '강도', '거래량', '거래량', '거래량', '거래량', '상승율', '상승율', '거래량', '거래대금', '거래량', '거래대금',
+               '거래량', '거래대금', '거래량', '거래대금']
+    header3 = ['날짜', '시간', '코인', '현재가', '', '', '급증률', '급증률', '급증률', '급증률', '', '', '(BTC)', '', '(BTC)', '', '(BTC)',
+               '', '(BTC)', '']
+    wb = Workbook()
+    ws1 = wb.worksheets[0]
+    ws1.title = 'gogo'
+    ws1.append(header1)
+    ws1.append(header2)
+    ws1.append(header3)
+    style_range(ws1, 'A1:T3', border=border, fill=fill, font=font, alignment=ali)
+    wb.save("gogo.xlsx")
+def saveExcel(datalist,fontlist):
+    """
+    날짜	시간	코인	현재가 단기시그널 매매강도 5~60거래량급증률 30분상승률 1시간상승률 5~60(거개량 거래대금)
+    """
+    wb = load_workbook('gogo.xlsx')
+    ws1 = wb.worksheets[0]
+    font2 = Font(vertAlign=None, color=colors.RED)
+    startrow = ws1.max_row+1
+    for rowidx in range(len(datalist)):
+        style_range(ws1, 'A' + str(startrow) + ':' + 'T' + str(startrow), border=border, fill=fill, font=font,
+                    alignment=ali)
+        idx = 0
+        for _ in range(20):
+            ws1.cell(row=startrow,column=idx+1,value=datalist[rowidx][idx]).font=fontlist[rowidx][idx]
+            idx+=1
+        startrow +=1
 
-    # Widen the first column to make the text clearer.
-    worksheet.set_column('A:A', 20)
-
-    # Add a bold format to use to highlight cells.
-    bold = workbook.add_format({'bold': True})
-
-    # Write some simple text.
-    worksheet.write('A1', 'Hello')
-
-    # Text with formatting.
-    worksheet.write('A2', 'World', bold)
-
-    # Write some numbers, with row/column notation.
-    worksheet.write(2, 0, 123)
-    worksheet.write(3, 0, 123.456)
-
-    workbook.close()
+    ##size
+    for col in ws1.columns:
+        max_length = 0
+        column = col[0].column  # Get the column name
+        for cell in col:
+            try:  # Necessary to avoid error on empty cells
+                if len(str(cell.value)) > max_length:
+                    max_length = len(cell.value)
+            except:
+                pass
+        adjusted_width = (max_length + 2) * 1.2
+        ws1.column_dimensions[column].width = adjusted_width
+    wb.save('gogo.xlsx')
 if __name__=="__main__":
-    makeExcel()
-    print(workbook)
-    exit(-1)
-
+    ### config var
+    initExcel() # if first
+    #exit(-1)# if first
+    coinlist = []
+    coinidx = 0
+    target_5m = [2,3,4,5,6,11,12,13]
+    ###
+    now = time.localtime()
+    d = "%04d-%02d-%02d " % (now.tm_year, now.tm_mon, now.tm_mday,)
+    t = '%02d:%02d:%02d' % (now.tm_hour, now.tm_min, now.tm_sec)
     html = requests.get('http://www.zzalzzal.com/gogo/upbit')
     bs4 = BeautifulSoup(html.text,'lxml')
     div = bs4.find('div',class_='tab-content')
@@ -49,10 +116,43 @@ if __name__=="__main__":
     fifteen_minute = div.find('div',id='15m').find('table',id='go3')
     thirty_minute = div.find('div', id='30m').find('table', id='go4')
     sixty_minute = div.find('div', id='60m').find('table', id='go5')
-    for tr in five_minute.find_all('tr')[1:]:
-        tdlist =tr.find_all('td')
-        print(tdlist[0].get_text(),":",tdlist[1].get_text().strip())
-    #print( len(five_minute.find_all('tr')),five_minute.find_all('tr')[1])
-    #print(len(fifteen_minute.find_all('tr')),fifteen_minute.find_all('tr')[1])
-    #print(len(thirty_minute.find_all('tr')))
-    #print(len(sixty_minute.find_all('tr')))
+    datalist = []
+    fontlist = []
+    """
+        날짜	시간	코인	현재가 단기시그널 매매강도 5~60거래량급증률 30분상승률 1시간상승률 5~60(거개량 거래대금)
+        0    1   2   3     4       5    6,7,8,9         10      11       12,13 ~ 14,15 ~16,17,~18,19
+         try:
+            coinname = tdlist[0].get_text().strip()
+            coinidx = coinlist.index(coinname)
+        except:
+            coinlist.append(coinname)
+            coinidx = coinlist.index(coinname)
+            datalist.append( ['' for _ in range(20)])
+            fontlist.append( ['' for _ in range(20)])
+            datalist[coinidx][0] = d
+            datalist[coinidx][1] = t
+            fontlist[coinidx][0] = Font(color=colors.WHITE)
+            fontlist[coinidx][1] = Font(color=colors.WHITE)
+    """
+    for tr in five_minute.find_all('tr')[1:3]:
+        tdlist =tr.find_all('td')[:-1]
+        coinlist.append(tdlist[0].get_text().strip())
+        datalist.append(['' for _ in range(20)])
+        fontlist.append(['' for _ in range(20)])
+        coinidx = coinlist.index(tdlist[0].get_text().strip())
+        datalist[coinidx][0] = d
+        datalist[coinidx][1] = t
+        fontlist[coinidx][0] = Font(color=colors.WHITE)
+        fontlist[coinidx][1] = Font(color=colors.WHITE)
+        for idx in range(len(tdlist)):
+            datalist[coinidx][target_5m[idx]]=tdlist[idx].get_text().strip()
+            try:
+                fontlist[coinidx][target_5m[idx]] = Font(color=str(tdlist[idx].find('i')['style']).split('#')[1][:-1])
+            except:
+                try:
+                    fontlist[coinidx][target_5m[idx]] = Font(color=str(tdlist[idx].find('span')['style']).split('#')[1][:-1])
+                except:
+                    fontlist[coinidx][target_5m[idx]] = Font(color=colors.WHITE)
+    saveExcel(datalist, fontlist)
+    #print(datalist,len(datalist))
+    #print(fontlist, len(fontlist))
