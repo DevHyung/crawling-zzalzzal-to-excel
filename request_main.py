@@ -106,9 +106,18 @@ if __name__=="__main__":
     coinidx = 0
     target_5m = [2,3,4,5,6,11,12,13]
 
-    taget_15m = [2,3,4,5,7,11,14,15]
-    oldget_15m = [4,6,7]
-    oldtarget_15m = [7,14,15]
+
+    taget_15m = [2,3,4,5,7,11,14,15] #원래저장되야하는거
+    oldget_15m = [4,6,7] # 있으면 이것만 뽑아오고
+    oldtarget_15m = [7,14,15] #여기에다가 넣으면됌
+
+    taget_30m = [2, 3, 4, 5, 8,10, 16, 17]  # 원래저장되야하는거
+    oldget_30m = [4,5,6,7]  # 있으면 이것만 뽑아오고
+    oldtarget_30m = [8,10,16,17]  # 여기에다가 넣으면됌
+
+    taget_60m = [2, 3, 4, 5, 9, 11, 18, 19]  # 원래저장되야하는거
+    oldget_60m = [4, 6, 7]  # 있으면 이것만 뽑아오고
+    oldtarget_60m = [9,18,19]  # 여기에다가 넣으면됌
 
     #####################################
     now = time.localtime()
@@ -164,7 +173,6 @@ if __name__=="__main__":
                             color=str(tdlist[idx].find('span')['style']).split('#')[1][:-1])
                     except:
                         fontlist[coinidx][oldtarget_15m[idx]] = Font(color=colors.WHITE)
-
         except:#없는경우
             print("없음",coinname)
             coinlist.append(coinname)
@@ -187,6 +195,82 @@ if __name__=="__main__":
                             color=str(tdlist[idx].find('span')['style']).split('#')[1][:-1])
                     except:
                         fontlist[coinidx][taget_15m[idx]] = Font(color=colors.WHITE)
+    for tr in thirty_minute.find_all('tr')[1:]:
+        tdlist = tr.find_all('td')[:-1]
+        try:
+            coinname = tdlist[0].get_text().strip()
+            coinidx = coinlist.index(coinname) # 이거지나면 있는경우
+            for idx in range(len(oldget_30m)):
+                datalist[coinidx][oldtarget_30m[idx]] = tdlist[oldget_30m[idx]].get_text().strip()
+                try:
+                    fontlist[coinidx][oldtarget_30m[idx]] = Font(
+                        color=str(tdlist[idx].find('i')['style']).split('#')[1][:-1])
+                except:
+                    try:
+                        fontlist[coinidx][oldtarget_30m[idx]] = Font(
+                            color=str(tdlist[idx].find('span')['style']).split('#')[1][:-1])
+                    except:
+                        fontlist[coinidx][oldtarget_30m[idx]] = Font(color=colors.WHITE)
+        except:#없는경우
+            print("없음",coinname)
+            coinlist.append(coinname)
+            coinidx = coinlist.index(coinname)
+
+            datalist.append(['' for _ in range(20)])
+            fontlist.append(['' for _ in range(20)])
+            datalist[coinidx][0] = d
+            datalist[coinidx][1] = t
+            fontlist[coinidx][0] = Font(color=colors.WHITE)
+            fontlist[coinidx][1] = Font(color=colors.WHITE)
+            for idx in range(len(tdlist)):
+                datalist[coinidx][taget_30m[idx]] = tdlist[idx].get_text().strip()
+                try:
+                    fontlist[coinidx][taget_30m[idx]] = Font(
+                        color=str(tdlist[idx].find('i')['style']).split('#')[1][:-1])
+                except:
+                    try:
+                        fontlist[coinidx][taget_30m[idx]] = Font(
+                            color=str(tdlist[idx].find('span')['style']).split('#')[1][:-1])
+                    except:
+                        fontlist[coinidx][taget_30m[idx]] = Font(color=colors.WHITE)
+    for tr in sixty_minute.find_all('tr')[1:]:
+        tdlist = tr.find_all('td')[:-1]
+        try:
+            coinname = tdlist[0].get_text().strip()
+            coinidx = coinlist.index(coinname) # 이거지나면 있는경우
+            for idx in range(len(oldget_60m)):
+                datalist[coinidx][oldtarget_60m[idx]] = tdlist[oldget_60m[idx]].get_text().strip()
+                try:
+                    fontlist[coinidx][oldtarget_60m[idx]] = Font(
+                        color=str(tdlist[idx].find('i')['style']).split('#')[1][:-1])
+                except:
+                    try:
+                        fontlist[coinidx][oldtarget_60m[idx]] = Font(
+                            color=str(tdlist[idx].find('span')['style']).split('#')[1][:-1])
+                    except:
+                        fontlist[coinidx][oldtarget_60m[idx]] = Font(color=colors.WHITE)
+        except:#없는경우
+            print("없음",coinname)
+            coinlist.append(coinname)
+            coinidx = coinlist.index(coinname)
+
+            datalist.append(['' for _ in range(20)])
+            fontlist.append(['' for _ in range(20)])
+            datalist[coinidx][0] = d
+            datalist[coinidx][1] = t
+            fontlist[coinidx][0] = Font(color=colors.WHITE)
+            fontlist[coinidx][1] = Font(color=colors.WHITE)
+            for idx in range(len(tdlist)):
+                datalist[coinidx][taget_60m[idx]] = tdlist[idx].get_text().strip()
+                try:
+                    fontlist[coinidx][taget_60m[idx]] = Font(
+                        color=str(tdlist[idx].find('i')['style']).split('#')[1][:-1])
+                except:
+                    try:
+                        fontlist[coinidx][taget_60m[idx]] = Font(
+                            color=str(tdlist[idx].find('span')['style']).split('#')[1][:-1])
+                    except:
+                        fontlist[coinidx][taget_60m[idx]] = Font(color=colors.WHITE)
     saveExcel(datalist, fontlist)
     #print(datalist,len(datalist))
     #print(fontlist, len(fontlist))
