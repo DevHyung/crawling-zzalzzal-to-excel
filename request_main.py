@@ -86,6 +86,7 @@ def saveExcel(datalist,fontlist,gogofile):
     날짜	시간	코인	현재가 단기시그널 매매강도 5~60거래량급증률 30분상승률 1시간상승률 5~60(거개량 거래대금)
     """
     won = [13, 15, 17, 19]
+    numidx = [3,5,6,7,8,9,10,11,12,14,16,18]
     wb = load_workbook(str(fileidx)+'_'+gogofile)
     ws1 = wb.worksheets[0]
     startrow = ws1.max_row+1
@@ -95,10 +96,19 @@ def saveExcel(datalist,fontlist,gogofile):
         for _ in range(20):
             if idx in won:
                 datalist[rowidx][idx] = numToWon(datalist[rowidx][idx])
+
             if fontlist[rowidx][idx] != '':
-                ws1.cell(row=startrow,column=idx+1,value=datalist[rowidx][idx]).font=fontlist[rowidx][idx]
+                if idx in numidx:
+                    ws1.cell(row=startrow,column=idx+1,value=float(datalist[rowidx][idx])).font=fontlist[rowidx][idx]
+                else:
+                    ws1.cell(row=startrow, column=idx + 1, value=datalist[rowidx][idx]).font = fontlist[rowidx][idx]
             else:
-                ws1.cell(row=startrow, column=idx + 1, value=datalist[rowidx][idx])
+                try:
+                    ws1.cell(row=startrow, column=idx + 1, value=float(datalist[rowidx][idx]))
+                except:
+                    print("잡아",datalist[rowidx][idx])
+                    ws1.cell(row=startrow, column=idx + 1, value=datalist[rowidx][idx])
+
             idx+=1
         startrow +=1
 
@@ -118,7 +128,7 @@ def saveExcel(datalist,fontlist,gogofile):
 if __name__=="__main__":
     print("_______________________________________________")
     print("*** Made By Pakr HyungJune copyright @ DevHyung")
-    f = open("option.txt", 'r')
+    f = open("option2.txt", 'r')
     option = f.readlines()
     gogocycle = float(option[2].strip())
     print("*** [OPTION] :" + str(int(gogocycle)) + "초 주기")
